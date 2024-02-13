@@ -1,0 +1,22 @@
+{
+  "name": "undergroundgroupai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/openai": "^0.0.14",
+    "@supabase/supabase-js": "^2.39.3",
+    "axios": "^1.6.7",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.4.1",
+    "html-to-text": "^9.0.5",
+    "jsdom": "^24.0.0",
+    "langchain": "^0.1.16"
+  }
+}
