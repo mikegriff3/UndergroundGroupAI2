@@ -1,5 +1,5 @@
-import { SupabaseVectorStore } from "langchain/vectorstores/supabase";
-import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+import { SupabaseVectorStore } from "@langchain/community/vectorstores/supabase";
+import { OpenAIEmbeddings } from "@langchain/openai";
 import { createClient } from "@supabase/supabase-js";
 import "dotenv/config";
 
@@ -16,6 +16,10 @@ const vectorStore = new SupabaseVectorStore(embeddings, {
   queryName: "match_documents",
 });
 
-const retriever = vectorStore.asRetriever();
+export function buildRetriever(blogID) {
+  let searchKwargs = { k: 15, filter: { id: blogID } };
+  return vectorStore.asRetriever((searchKwargs = searchKwargs));
+}
+// const retriever = vectorStore.asRetriever();
 
-export { retriever };
+// export { retriever };
