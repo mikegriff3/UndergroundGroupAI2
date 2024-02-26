@@ -6,11 +6,12 @@ let pageCount = 0;
 export async function scrapeBlog(
   url,
   aggregatedText = "",
-  visitedLinks = new Set()
+  visitedLinks = new Set(),
+  aggregatedMetaTags = ""
 ) {
   try {
     if (visitedLinks.has(url) || pageCount >= 20) {
-      return aggregatedText; // Exit if the URL has already been visited to avoid infinite loop
+      return { aggregatedText, aggregatedMetaTags }; // Exit if the URL has already been visited to avoid infinite loop
     }
     visitedLinks.add(url);
     pageCount++;
@@ -26,23 +27,34 @@ export async function scrapeBlog(
 
     // Extract text content from the current page
     const textContent = $("p").text().trim();
+    const metaTags = $("meta").toString();
 
     // Output the text content of the current page
     // console.log(`URL: ${url}`);
     // console.log(textContent);
     // console.log("---------------------------");
     aggregatedText += textContent + "\n\n";
+    aggregatedMetaTags += metaTags + "\n\n";
+    //console.log("META TAGS: ", aggregatedMetaTags);
 
     // Recursively scrape each linked page with a delay
     for (const link of links) {
       if (link && link.startsWith(url)) {
-        aggregatedText = await scrapeBlog(link, aggregatedText, visitedLinks);
+        const { aggregatedText: newText, aggregatedMetaTags: newMetaTags } =
+          await scrapeBlog(
+            link,
+            aggregatedText,
+            visitedLinks,
+            aggregatedMetaTags
+          );
+        aggregatedText = newText;
+        aggregatedMetaTags = newMetaTags;
       }
     }
-    return aggregatedText;
+    return { aggregatedText, aggregatedMetaTags };
   } catch (error) {
     console.error("Error fetching data:", error);
-    return aggregatedText;
+    return { aggregatedText, aggregatedMetaTags };
   }
 }
 
