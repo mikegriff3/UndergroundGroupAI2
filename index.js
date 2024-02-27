@@ -31,6 +31,7 @@ let metas;
 const randomID = generateRandomID();
 
 async function runAnalysis() {
+  let results = {};
   try {
     const blogUrl = "https://www.theundergroundgroup.com/blog-temp"; // Replace with the URL of the blog you want to scrape
     const { aggregatedText, aggregatedMetaTags } = await scrapeBlog(blogUrl);
@@ -97,7 +98,21 @@ async function runAnalysis() {
     const context = combineDocuments(retrieval);
     const metas = combineDocuments(metasRetrieval);
 
-    const format = `Rating: X.X/10
+    const audienceFormat = `Target Audience: <String>
+
+    Top 10 Keywords:
+    1. <String>
+    2. <String>
+    3. <String>
+    4. <String>
+    5. <String>
+    6. <String>
+    7. <String>
+    8. <String>
+    9. <String>
+    10. <String>`;
+
+    const format = `Rating: X.X
 
     Feedback: <String>
 
@@ -112,7 +127,9 @@ async function runAnalysis() {
     Your primary goal will be to analyze the articles written on a website and indicate the company's primary demographic and what keywords will work best to reach that demographic.
     Please provide the ten best keywords to target their primary audience using SEO and also tell us what the target audience is.
     Only use the context provided to come up with your answer. Ignore any context about emails, terms of service, feedback, or newsletters.
-    context: {context}`;
+    Your answer should be given exactly in the provided format. 
+    context: {context}
+    Format: {format}`;
 
     const audiencePrompt = PromptTemplate.fromTemplate(audienceTemplate);
 
@@ -120,11 +137,16 @@ async function runAnalysis() {
 
     const response = await chain.invoke({
       context: context,
+      format: audienceFormat,
     });
 
     console.log("\nTARGET AUDIENCE & KEYWORDS");
     console.log("-------------------------------");
     console.log(response);
+    let lines = response.split(/\n/);
+    let temp = lines[0].split(/\s+/);
+    results.targetAudience = temp.slice(2).join(" ");
+    results.keywords = processArray(lines, 10);
 
     const overallGradingTemplate = `You are a bot that specializes in analyzing the content of a content creator's website and rate the quality of that content.
 // Given a set of context articles, the primary audience for those articles, and the top keywords to reach that audience, make sure to give a rating from 1-10, with 1 being the worst and 10 being the best, on how well they are effectively reaching out to their audience.
@@ -192,11 +214,17 @@ async function runAnalysis() {
       }),
     ]);
 
-    console.log("GRADE:", responses[0]);
-    console.log("Readability:", responses[1]);
-    console.log("Topic Authority:", responses[2]);
-    console.log("External Linking:", responses[3]);
-    console.log("META TAGS:", responses[4]);
+    //console.log("GRADE:", responses[0]);
+    results.overallGrade = formatAnswer(responses[0]);
+    //console.log("Readability:", responses[1]);
+    results.readability = formatAnswer(responses[1]);
+    //console.log("Topic Authority:", responses[2]);
+    results.topicAuthority = formatAnswer(responses[2]);
+    //console.log("External Linking:", responses[3]);
+    results.externalLinking = formatAnswer(responses[3]);
+    //console.log("META TAGS:", responses[4]);
+    results.metaTags = formatAnswer(responses[4]);
+    console.log("RESULTS\n\n", results);
   } catch (error) {
     console.error("Error:", error);
   }
@@ -210,6 +238,35 @@ async function invokeLLMChain(template, context, additionalParams = {}) {
   const response = await chain.invoke({ context, ...additionalParams });
 
   return response;
+}
+
+function formatAnswer(answer) {
+  let data = {};
+
+  let lines = answer.split(/\n/);
+  let rating = lines[0].split(/\s+/);
+  data.rating = rating.slice(1).join(" ");
+  let feedback = lines[2].split(/\s+/);
+  //console.log("LINES:", lines);
+  data.feedback = feedback.slice(1).join(" ");
+  data.suggestions = processArray(lines, 5);
+
+  return data;
+}
+
+function processArray(arr, items) {
+  // Get the last 10 items of the array
+  let lastNItems = arr.slice(-items);
+
+  // Remove the first word from each item in the new array
+  let processedArray = lastNItems.map((item) => {
+    // Split the item into words
+    let words = item.split(/\s+/);
+    // Remove the first word and join the remaining words
+    return words.slice(1).join(" ");
+  });
+
+  return processedArray;
 }
 
 runAnalysis();
