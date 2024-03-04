@@ -15,9 +15,12 @@
     "@supabase/supabase-js": "^2.39.3",
     "axios": "^1.6.7",
     "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.1",
+    "express": "^4.18.3",
     "html-to-text": "^9.0.5",
     "jsdom": "^24.0.0",
-    "langchain": "^0.1.16"
+    "langchain": "^0.1.16",
+    "url": "^0.11.3"
   }
 }

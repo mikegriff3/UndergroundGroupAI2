@@ -19,17 +19,32 @@ export async function scrapeBlog(
     const response = await axios.get(url);
     const $ = cheerio.load(response.data);
 
+    // Extract base URL from the provided URL
+    const baseUrl = new URL(url).origin;
+    //console.log("BASE URL:", baseUrl);
+
     // Extract all links from the page
     const links = [];
     $("a").each((index, element) => {
-      links.push($(element).attr("href"));
+      const href = $(element).attr("href");
+      if (href) {
+        const absoluteUrl = new URL(href, baseUrl).toString();
+        //console.log("ABSOLUTE URL", absoluteUrl);
+        links.push(absoluteUrl);
+      }
     });
+    //Extract all links from the page
+    // const links = [];
+    // $("a").each((index, element) => {
+    //   links.push($(element).attr("href"));
+    // });
 
     // Extract text content from the current page
     const textContent = $("p").text().trim();
     const metaTags = $("meta").toString();
 
     // Output the text content of the current page
+    //console.log("VISITED LINKS: ", visitedLinks);
     // console.log(`URL: ${url}`);
     // console.log(textContent);
     // console.log("---------------------------");
