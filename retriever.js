@@ -17,7 +17,7 @@ const vectorStore = new SupabaseVectorStore(embeddings, {
 });
 
 export function buildRetriever(blogID) {
-  let searchKwargs = { k: 15, filter: { id: blogID } };
+  let searchKwargs = { k: 10, filter: { id: blogID } };
   return vectorStore.asRetriever((searchKwargs = searchKwargs));
 }
 // const retriever = vectorStore.asRetriever();

@@ -19,12 +19,16 @@ function renderContent(data) {
   targetAudienceTitleElement.style.fontSize = "20px";
   targetAudienceTitleElement.style.color = "#ee5535";
   contentElement.appendChild(targetAudienceTitleElement);
+  // Append hr element after the section
+  const hrElement = document.createElement("hr");
+  contentElement.appendChild(hrElement);
   contentElement.appendChild(document.createElement("br"));
 
   //Target Audience
   const targetAudienceElement = document.createElement("div");
   targetAudienceElement.textContent = "Target Audience: " + data.targetAudience;
   contentElement.appendChild(targetAudienceElement);
+  contentElement.appendChild(document.createElement("br"));
 
   //SEO Keywords Title
   const keywordsTitleElement = document.createElement("div");
@@ -38,10 +42,8 @@ function renderContent(data) {
     suggestion.textContent = `${i + 1}. ${data.keywords[i]}`; // Set div content with item number
     contentElement.appendChild(suggestion); // Append div to the body (you can change this to any other element)
   }
-
-  // Append hr element after the section
-  const hrElement = document.createElement("hr");
-  contentElement.appendChild(hrElement);
+  contentElement.appendChild(document.createElement("br"));
+  contentElement.appendChild(document.createElement("br"));
 
   // Render Readability Grade Section
   renderSection(
@@ -77,19 +79,59 @@ function renderContent(data) {
 }
 
 function renderSection(title, rating, feedback, suggestions) {
-  // Create section title element
+  // Create section container
+  const sectionContainer = document.createElement("div");
+  sectionContainer.style.display = "flex";
+  sectionContainer.style.flexDirection = "column";
+  sectionContainer.style.alignItems = "flex-start";
+  sectionContainer.style.justifyContent = "flex-end"; // Align items to the end (bottom)
+  sectionContainer.style.height = "100%"; // Set height to occupy parent's height
+  contentElement.appendChild(sectionContainer);
+
+  // Create container for title and rating
+  const titleRatingContainer = document.createElement("div");
+  titleRatingContainer.style.display = "flex";
+  titleRatingContainer.style.justifyContent = "space-between"; // Align items with space between them
+  titleRatingContainer.style.alignItems = "flex-end"; // Align items to the bottom
+  titleRatingContainer.style.width = "100%"; // Take full width
+  sectionContainer.appendChild(titleRatingContainer);
+
+  // Create title element
   const titleElement = document.createElement("div");
   titleElement.textContent = title;
   titleElement.style.fontSize = "20px";
   titleElement.style.color = "#ee5535";
-  contentElement.appendChild(titleElement);
-  contentElement.appendChild(document.createElement("br"));
+  titleRatingContainer.appendChild(titleElement);
+
+  // Create container for rating with border
+  const ratingContainer = document.createElement("div");
+  ratingContainer.style.border = "1px solid #ccc";
+  ratingContainer.style.padding = "10px";
+  ratingContainer.style.marginLeft = "auto"; // Move rating to the far right
+
+  // Set background color based on rating
+  if (rating >= 9) {
+    ratingContainer.style.backgroundColor = "green";
+  } else if (rating >= 7) {
+    ratingContainer.style.backgroundColor = "lightgreen";
+  } else if (rating >= 5) {
+    ratingContainer.style.backgroundColor = "orange";
+  } else {
+    ratingContainer.style.backgroundColor = "red";
+  }
+
+  titleRatingContainer.appendChild(ratingContainer);
 
   // Create rating element
   const ratingElement = document.createElement("div");
   ratingElement.textContent = rating;
   ratingElement.style.fontSize = "26px";
-  contentElement.appendChild(ratingElement);
+  ratingElement.style.color = "white";
+  ratingContainer.appendChild(ratingElement);
+
+  // Append hr element after the section
+  const hrElement = document.createElement("hr");
+  contentElement.appendChild(hrElement);
   contentElement.appendChild(document.createElement("br"));
 
   // Create feedback element
@@ -109,8 +151,5 @@ function renderSection(title, rating, feedback, suggestions) {
     contentElement.appendChild(suggestionElement);
   });
   contentElement.appendChild(document.createElement("br"));
-
-  // Append hr element after the section
-  const hrElement = document.createElement("hr");
-  contentElement.appendChild(hrElement);
+  contentElement.appendChild(document.createElement("br"));
 }

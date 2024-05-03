@@ -1,13 +1,12 @@
 import axios from "axios";
 import cheerio from "cheerio";
 
-let pageCount = 0;
-
 export async function scrapeBlog(
   url,
   aggregatedText = "",
   visitedLinks = new Set(),
-  aggregatedMetaTags = ""
+  aggregatedMetaTags = "",
+  pageCount = 0 // Initialize pageCount here
 ) {
   try {
     if (visitedLinks.has(url) || pageCount >= 20) {
@@ -44,10 +43,10 @@ export async function scrapeBlog(
     const metaTags = $("meta").toString();
 
     // Output the text content of the current page
-    //console.log("VISITED LINKS: ", visitedLinks);
-    // console.log(`URL: ${url}`);
-    // console.log(textContent);
-    // console.log("---------------------------");
+    console.log("VISITED LINKS: ", visitedLinks);
+    console.log(`URL: ${url}`);
+    //console.log(textContent);
+    //console.log("---------------------------");
     aggregatedText += textContent + "\n\n";
     aggregatedMetaTags += metaTags + "\n\n";
     //console.log("META TAGS: ", aggregatedMetaTags);
@@ -60,7 +59,8 @@ export async function scrapeBlog(
             link,
             aggregatedText,
             visitedLinks,
-            aggregatedMetaTags
+            aggregatedMetaTags,
+            pageCount + 1 // Increment pageCount during recursion
           );
         aggregatedText = newText;
         aggregatedMetaTags = newMetaTags;
@@ -72,13 +72,3 @@ export async function scrapeBlog(
     return { aggregatedText, aggregatedMetaTags };
   }
 }
-
-// Example usage:
-// const blogUrl = "https://www.chasejarvis.com/blog/"; // Replace with the URL of the blog you want to scrape
-// scrapeBlog(blogUrl)
-//   .then((aggregatedText) => {
-//     console.log("Aggregated Text:", aggregatedText);
-//   })
-//   .catch((error) => {
-//     console.error("Error:", error);
-//   });
