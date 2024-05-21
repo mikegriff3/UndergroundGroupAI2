@@ -1,9 +1,10 @@
 import express from "express";
 import cors from "cors";
+import nodemailer from "nodemailer";
 import { ChatOpenAI } from "@langchain/openai";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { PromptTemplate } from "@langchain/core/prompts";
-import { scrapeBlog } from "./webScraper.js";
+import { scrapeBlog } from "./webscraperV2.js";
 import "dotenv/config";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { createClient } from "@supabase/supabase-js";
@@ -23,6 +24,33 @@ app.use(cors());
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+
+// Send an email when someone inputs their email for full report
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "mike@theundergroundgroup.com",
+    pass: "iowc rovo noxo jkga",
+  },
+});
+
+app.post("/api/send-input-email", (req, res) => {
+  const { email } = req.body;
+
+  const mailOptions = {
+    from: "mike@theundergroundgroup.com",
+    to: "mike@theundergroundgroup.com",
+    subject: "New Email Submission - AI Content Analysis Report",
+    text: `New email submitted: ${email}`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return res.status(500).send(error.toString());
+    }
+    res.send("Email sent: " + info.response);
+  });
+});
 
 // Define a route to process API requests to '/api/analyze'
 app.post("/api/analyze", async (req, res) => {
@@ -60,9 +88,14 @@ const openAIApiKey = process.env.OPENAI_API_KEY;
 
 const llm = new ChatOpenAI({
   openAIApiKey,
-  //temperature: 1.5,
-  //modelName: "gpt-4-turbo-preview",
+  temperature: 0.7,
+  modelName: "gpt-4o",
 });
+
+function cleanText(inputText) {
+  // Replace the triple backticks and 'json' at the beginning and the triple backticks at the end
+  return inputText.replace(/^```json\n|\n```$/g, "");
+}
 
 async function runAnalysis(blogUrl) {
   let context;
@@ -72,7 +105,12 @@ async function runAnalysis(blogUrl) {
   const randomID = generateRandomID();
   try {
     //const blogUrl = "https://www.theundergroundgroup.com/old-blog"; // Replace with the URL of the blog you want to scrape
-    const { aggregatedText, aggregatedMetaTags } = await scrapeBlog(blogUrl);
+    const {
+      originalUrl,
+      domainNameWithTLD,
+      aggregatedText,
+      aggregatedMetaTags,
+    } = await scrapeBlog(blogUrl);
     //console.log("TEXT CODEX|n\n", aggregatedText);
 
     // Initialize Supabase client
@@ -151,14 +189,14 @@ async function runAnalysis(blogUrl) {
     }`;
 
     const format = `{
-      "Rating": X.X,
+      "Rating": XXX,
       "Potential Rating": X.X,
       "Feedback": <String>,
       "Suggestions for Improvement": [<String>, <String>, <String>, <String>, <String>]
     }`;
 
     const readabilityFormat = `{
-      "Rating": X.X,
+      "Rating": XXX,
       "Potential Rating": X.X,
       "Feedback": <String>,
       "Flesch Reading Ease Score (FRES)": XX.X,
@@ -167,9 +205,9 @@ async function runAnalysis(blogUrl) {
     }`;
 
     const moreGradesFormat = `{
-      "Keyword Usage Rating": X.X
+      "Keyword Usage Rating": XXX
       "Keyword Usage Feedback": <String>
-      "Meta Tags Rating": X.X
+      "Meta Tags Rating": XXX
       "Meta Tags Feedback": <String>}`;
 
     const audienceTemplate = `You are a bot that specializes in analyzing the content of a content creator's website and rate the quality of that content.
@@ -188,20 +226,16 @@ async function runAnalysis(blogUrl) {
       context: context,
       format: audienceFormat,
     });
-    console.log("TARGET AUDIENCE: ", response);
+    console.log("TARGET AUDIENCE: ", cleanText(response));
 
-    let lines = response.split(/\n/);
-    let temp = lines[0].split(/\s+/);
-    results.targetAudience = temp.slice(2).join(" ");
-    results.keywords = processArray(lines, 10);
+    results.keywords = JSON.parse(cleanText(response));
 
     const overallGradingTemplate = `You are a bot that specializes in analyzing the content of a content creator's website and rating the quality of that content.
     Given a set of context articles, the primary audience for those articles, and the top keywords to reach that audience, make sure to give a rating from 1-10, with 1 being the worst and 10 being the best, on the overall quality of the content. Your overall rating should factor in the following key metrics: Relevance, Accuracy, Clarity and Readability, Depth and Detail, Originality, Structure and Organization, Engagement, and SEO. You should not include anything regarding Visual Appeal in your rating. 
     Your feedback should justify your rating with specific examples from the content that demonstrate the effectiveness of the content. 
     Also provide 5 suggestions on how they can improve their overall grade. You should base your suggestions on specific gaps or weaknesses you identify during your analysis. Each suggestion should be actionable and clearly tied to potential improvements in improving the overall quality of the content. In your response, do not number your suggestions.
     Also provide what their Potential Overall Rating could be if the suggested improvements were implemented. You should be a very tough critic with your Potential Rating.
-    It is absolutely imperative that your answer be given exactly in the provided JSON format. Do not add anything outside of the braces of the JSON object.
-    You should be a very tough critic when giving your rating.
+    It is absolutely imperative that your answer be given exactly in the provided JSON format with only the following Keys used: "Rating" which is a Float, "Potential Rating" which is a Float, "Feedback" which is a String and should not have any new line characters and should not have any new line characters, and "Suggestions for Improvement" which is an array of Strings. Do not add anything outside of the braces of the JSON object.
     Context: {context}
     Primary Audience and Keywords: {audience}
     Format: {format}
@@ -215,7 +249,6 @@ async function runAnalysis(blogUrl) {
     Also provide the Flesch Reading Ease Score (FRES).
     Also provide the Tone of Voice for the content in one of the following categories: Very Casual, Somewhat Casual, Neutral, Somewhat Formal, and Very Formal. Your Tone of Voice rating must be only from one of these five selections.
     It is absolutely imperative that your answer be given exactly in the provided JSON format. Do not add anything outside of the braces of the JSON object.
-    You should be a very tough critic when giving your rating.
     Context: {context}
     Primary Audience and Keywords: {audience}
     Format: {format}
@@ -226,8 +259,7 @@ async function runAnalysis(blogUrl) {
     Your feedback should justify your rating with specific examples from the content that demonstrate the Topic Authority of the content. 
     Also provide 5 suggestions on how they can improve their articles to be have more topic authority. You should base your suggestions on specific gaps or weaknesses you identify during your analysis. Each suggestion should be actionable and clearly tied to potential improvements in improving the Topic Authority of the content. In your response, do not number your suggestions.
     Also provide what their Potential Topic Authority Rating could be if the suggested improvements were implemented. You should be a very tough critic with your Potential Rating.
-    It is absolutely imperative that your answer be given exactly in the provided JSON format. Do not add anything outside of the braces of the JSON object.
-    You should be a very tough critic when giving your rating.
+    It is absolutely imperative that your answer be given exactly in the provided JSON format with only the following Keys used: "Rating" which is a Float, "Potential Rating" which is a Float, "Feedback" which is a String and should not have any new line characters, and "Suggestions for Improvement" which is an array of Strings. Do not add anything outside of the braces of the JSON object.
     Context: {context}
     Primary Audience and Keywords: {audience}
     Format: {format}
@@ -238,8 +270,7 @@ async function runAnalysis(blogUrl) {
     Your feedback should justify your rating with specific examples from the content that demonstrate the Value of the content. 
     Also provide 5 suggestions on how they can improve their content to provide better Value. You should base your suggestions on specific gaps or weaknesses you identify during your analysis. Each suggestion should be actionable and clearly tied to potential improvements in improving the Value of the content. In your response, do not number your suggestions.
     Also provide what their Potential Value Rating could be if the suggested improvements were implemented. You should be a very tough critic with your Potential Rating. 
-    It is absolutely imperative that your answer be given exactly in the provided JSON format. Do not add anything outside of the braces of the JSON object.
-    You should be a very tough critic when giving your rating.
+    It is absolutely imperative that your answer be given exactly in the provided JSON format with only the following Keys used: "Rating" which is a Float, "Potential Rating" which is a Float, "Feedback" which is a String and should not have any new line characters, and "Suggestions for Improvement" which is an array of Strings. Do not add anything outside of the braces of the JSON object.
     Context: {context}
     Primary Audience and Keywords: {audience}
     Format: {format}
@@ -250,8 +281,7 @@ async function runAnalysis(blogUrl) {
     Your feedback should justify your rating with specific examples from the content that demonstrate the SEO performance of the content. 
     Also provide 5 suggestions on how they can improve their SEO. You should base your suggestions on specific gaps or weaknesses you identify during your analysis. Each suggestion should be actionable and clearly tied to potential improvements in improving the SEO performance of the content. In your response, do not number your suggestions.
     Also provide what their Potential SEO Rating could be if the suggested improvements were implemented. You should be a very tough critic with your Potential Rating.
-    It is absolutely imperative that your answer be given exactly in the provided JSON format. Do not add anything outside of the braces of the JSON object.
-    You should be a very tough critic when giving your rating.
+    It is absolutely imperative that your answer be given exactly in the provided JSON format with only the following Keys used: "Rating" which is a Float, "Potential Rating" which is a Float, "Feedback" which is a String and should not have any new line characters, and "Suggestions for Improvement" which is an array of Strings. Do not add anything outside of the braces of the JSON object.
     Context: {context}
     Primary Audience and Keywords: {audience}
     Meta Tags: {metas}
@@ -262,8 +292,7 @@ async function runAnalysis(blogUrl) {
 // Given a set of context articles, the primary audience for those articles, the top keywords to reach that audience, and the Meta Tags found on those articles, make sure to give a rating from 1-10, with 1 being the worst and 10 being the best, on the following categories: Keyword Usage and Meta Tags.
 Your Keyword Usage rating should factor in the following key metrics: Relevance of Keywords, Keyword Placement, Density of Keywords, Variety of Keywords, Natural Integration, Keyword Competition, Keyword Consistency, and Keyword Intent.
 Your Meta Tag rating should factor in the following key metrics: Meta Title Relevance and Clarity, Meta Tag Types, Meta Title Length, Meta Description Relevance, Meta Description Length, Meta Tag Keyword Integration, and Meta Tag Uniqueness. You should not include anything regarding Visual Appeal in your rating.
-It is absolutely imperative that your answer be given exactly in the provided JSON format. Do not add anything outside of the braces of the JSON object. 
-You should be a very tough critic when giving your rating.
+It is absolutely imperative that your answer be given exactly in the provided JSON format. Do not add anything outside of the braces of the JSON object.
 Context: {context}
 Primary Audience and Keywords: {audience}
 Meta Tags: {metas}
@@ -299,20 +328,22 @@ Format: {format}`;
       }),
     ]);
 
-    console.log("GRADE:", responses[0]);
-    //results.overallGrade = formatAnswer(responses[0]);
-    console.log("Readability:", responses[1]);
-    //results.readability = formatReadabilityAnswer(responses[1]);
-    console.log("Topic Authority:", responses[2]);
-    //results.topicAuthority = formatAnswer(responses[2]);
-    console.log("Value:", responses[3]);
-    //results.value = formatAnswer(responses[3]);
-    console.log("SEO:", responses[4]);
-    //results.seo = formatAnswer(responses[4]);
-    console.log("MORE GRADES:", responses[5]);
-    //results.moreGrades = formatMoreGradesAnswer(responses[5]);
-    //console.log("RESULTS\n\n", results);
+    console.log("GRADE:", cleanText(responses[0]));
+    results.overallGrade = JSON.parse(cleanText(responses[0]));
+    console.log("Readability:", cleanText(responses[1]));
+    results.readability = JSON.parse(cleanText(responses[1]));
+    console.log("Topic Authority:", cleanText(responses[2]));
+    results.topicAuthority = JSON.parse(cleanText(responses[2]));
+    console.log("Value:", cleanText(responses[3]));
+    results.value = JSON.parse(cleanText(responses[3]));
+    console.log("SEO:", cleanText(responses[4]));
+    results.seo = JSON.parse(cleanText(responses[4]));
+    console.log("MORE GRADES:", cleanText(responses[5]));
+    results.moreGrades = JSON.parse(cleanText(responses[5]));
+    console.log("RESULTS\n\n", results);
     console.log("CONTEXT\n\n", context);
+    results.originalUrl = originalUrl;
+    results.subdomain = domainNameWithTLD;
     return results;
   } catch (error) {
     console.error("Error:", error);
@@ -328,72 +359,3 @@ async function invokeLLMChain(template, context, additionalParams = {}) {
 
   return response;
 }
-
-function formatAnswer(answer) {
-  let data = {};
-
-  let lines = answer.split(/\n/);
-  //console.log("LINES: ", lines);
-  let rating = lines[0].split(/\s+/);
-  data.rating = rating.slice(1).join(" ");
-  let potential = lines[2].split(/\s+/);
-  data.potential = potential.slice(2).join(" ");
-  let feedback = lines[4].split(/\s+/);
-  data.feedback = feedback.slice(1).join(" ");
-  data.suggestions = processArray(lines, 5);
-
-  return data;
-}
-
-function formatReadabilityAnswer(answer) {
-  let data = {};
-
-  let lines = answer.split(/\n/);
-  //console.log("LINES: ", lines);
-  let rating = lines[0].split(/\s+/);
-  data.rating = rating.slice(1).join(" ");
-  let potential = lines[2].split(/\s+/);
-  data.potential = potential.slice(2).join(" ");
-  let feedback = lines[4].split(/\s+/);
-  data.feedback = feedback.slice(1).join(" ");
-  let fres = lines[6].split(/\s+/);
-  data.fres = fres[fres.length - 1];
-  // Using regex to find text after the colon ':' and stop either before a parenthesis '(' or at the end of the string
-  let tone = lines[8].match(/:\s*([^()]*)(?=\s*\(|$)/);
-  data.tov = tone ? tone[1].trim() : "";
-  data.suggestions = processArray(lines, 5);
-
-  return data;
-}
-
-function formatMoreGradesAnswer(answer) {
-  let data = {};
-  let lines = answer.split(/\n/);
-  let keys = lines[0].split(/\s+/);
-  data.keywordUsageRating = keys[keys.length - 1];
-  let keysFeedback = lines[2].split(/\s+/);
-  data.keywordUsageFeedback = keysFeedback.slice(1).join(" ");
-  let metas = lines[4].split(/\s+/);
-  data.metaRating = metas[metas.length - 1];
-  let metasFeedback = lines[6].split(/\s+/);
-  data.metaFeedback = metasFeedback.slice(1).join(" ");
-  return data;
-}
-
-function processArray(arr, items) {
-  // Get the last 10 items of the array
-  let lastNItems = arr.slice(-items);
-
-  // Remove the first word from each item in the new array
-  let processedArray = lastNItems.map((item) => {
-    // Split the item into words
-    let words = item.split(/\s+/);
-    // Remove the first word and join the remaining words
-    return words.slice(1).join(" ");
-  });
-
-  return processedArray;
-}
-
-//const analysis = await runAnalysis();
-//console.log(analysis);
