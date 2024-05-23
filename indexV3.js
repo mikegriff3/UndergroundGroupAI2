@@ -18,6 +18,7 @@ import {
   RunnableSequence,
   RunnablePassthrough,
 } from "@langchain/core/runnables";
+import { createMailOptions } from "./emailOptions.js";
 
 const app = express();
 app.use(cors());
@@ -35,14 +36,10 @@ const transporter = nodemailer.createTransport({
 });
 
 app.post("/api/send-input-email", (req, res) => {
-  const { email } = req.body;
+  const { email, data } = req.body;
+  console.log("Testing data for email: ", data);
 
-  const mailOptions = {
-    from: "mike@theundergroundgroup.com",
-    to: "mike@theundergroundgroup.com",
-    subject: "New Email Submission - AI Content Analysis Report",
-    text: `New email submitted: ${email}`,
-  };
+  const mailOptions = createMailOptions(email, data);
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {

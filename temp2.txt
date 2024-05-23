@@ -1,27 +1,206 @@
-function renderContent(data) {
-  if (data.readability["Flesch Reading Ease Score (FRES)"] >= 90) {
-    data.readability.fresLevel = "5th Grade Level";
-  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 80) {
-    data.readability.fresLevel = "6th Grade Level";
-  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 70) {
-    data.readability.fresLevel = "7th Grade Level";
-  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 60) {
-    data.readability.fresLevel = "8th & 9th Grade Level";
-  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 50) {
-    data.readability.fresLevel = "High School Level";
-  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 30) {
-    data.readability.fresLevel = "College Student Level";
-  } else {
-    data.readability.fresLevel = "College Graduate Level";
+<script>
+// Function for mobile responsiveness for Main Site Navbar links
+(function () {
+  let folders;
+
+  function rebuildAnchor(folder) {
+    let parent = folder.closest('.header-nav-item--folder'),
+        href = folder.href.includes('.com') ? folder.href.split('.com')[1].replace("-folder/", "") : folder.href.replace("-folder/", ""),
+        anchorClone = folder.cloneNode(true);
+
+    anchorClone.classList.add('clickable-folder');
+    anchorClone.setAttribute('href', href);
+    anchorClone.style.cssText = `
+          opacity: 1;
+          transform: unset;
+    `;
+    parent.insertAdjacentElement('afterbegin', anchorClone);
+    if (href == window.location.pathname) {
+      console.log()
+      anchorClone.closest('.header-nav-item--folder').classList.add('header-nav-item--active')
+    }
   }
 
+  function addToMobile(folder) {
+    let href = folder.getAttribute("href"),
+        hrefAdjusted = href.includes('.com') ? href.split('.com')[1].replace("-folder/", "") : href.replace("-folder/", ""),
+        text = folder.innerText,
+        newText = `${text}`,
+        mobileFolder = document.querySelector(`[data-folder="${href}"]`),
+        backButton = mobileFolder.querySelector(".header-menu-nav-folder-content > *:first-of-type"),
+        allButton = `<div class="container header-menu-nav-item header-menu-nav-item--external">
+  				<a href="${hrefAdjusted}">${newText}</a>
+			<div>`;
+
+    backButton.insertAdjacentHTML('afterend', allButton)
+  }
+
+  /* Select All Folder Links &  */
+  function setFolderLinks() {
+    folders = document.querySelectorAll('.header-display-desktop .header-nav-folder-title[href*="-folder/"]');
+
+    for (let folder of folders) {
+      window.addEventListener('load', function() {
+        addToMobile(folder);
+        rebuildAnchor(folder);
+        folder.remove();
+      });
+    }
+  }
+
+  setFolderLinks();
+})();
+  
+// Handle malicious input for AI Analysis Input  
+function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '\'': '&#39;',
+        '"': '&quot;'
+    }[tag] || tag));
+}
+  
+// Function to capitalize words for Suggested SEO Keywords  
+function capitalizeWords(str) {
+    return str.replace(/\b\w/g, function(char) {
+        return char.toUpperCase();
+    });
+}
+  
+// Handles API call when a link is submitted to the AI Analysis Report
+function submitAnalysisForm() {
+    var searchElement = document.getElementById('analysis-input-container');
+  	var titleElement = document.getElementById('analysis-title-container');
+  	var taglineElement = document.getElementById('analysis-tagline-container');
+  	var backgroundElement = document.querySelector('section[data-section-id="65e0d57621bd16617b7352f4"] .content-wrapper'); //Grab the background image
+    var loadingElement = document.getElementById('loading');
+    var loadingTextElement = document.getElementById('loading-text');
+    var userInput = document.getElementById("userInput").value;
+
+  	// Change the background
+  	backgroundElement.style.background = '#dfdfdf';
+    // Hide the search elements
+    searchElement.style.display = 'none';
+  	titleElement.style.display = 'none';
+  	taglineElement.style.display = 'none';
+
+    // Function to display errors to the user
+    function displayError(message) {
+        alert(message); // You can replace this with a more sophisticated error display method
+        searchElement.style.display = 'block'; // Show the input form again to allow correction
+      	titleElement.style.display = 'block';
+  		taglineElement.style.display = 'block';
+        loadingElement.style.display = 'none';
+        loadingTextElement.style.display = 'none';
+      	backgroundElement.style.background = `linear-gradient(
+            rgba(0, 0, 0, 0.4), /* Black overlay with 50% opacity */
+            rgba(0, 0, 0, 0.4)
+        ), url('https://images.squarespace-cdn.com/content/5fa369420e4abc36602d032b/ceb97e79-5389-4601-bf6b-95870ff1a064/mikegriff3_background_image_grey_orange_servers._ai_computers_b2646206-e640-4cc7-8364-5bec7f54159b.png?content-type=image%2Fpng')`;
+    }
+
+    // Validate the URL
+    if (!isValidUrl(userInput)) {
+        displayError("Please enter a valid URL.");
+        return; // Stop the function if the URL is not valid
+    }
+
+    // Sanitize the URL to prevent XSS
+    var safeUserInput = escapeHTML(userInput);
+
+    // Display the loading elements
+    loadingElement.style.display = 'block';
+    loadingTextElement.style.display = 'flex';
+  	var loadingTexts = ["Scraping Content from Webpage...", "AI Analyzing Content...", "Creating Your AI Content Report", "Adding Some Finishing Touches on the Analysis..."];
+  	var currentLoadingIndex = 0;
+  	var intervalId = setInterval(() => {
+        loadingTextElement.textContent = loadingTexts[currentLoadingIndex];
+        if (currentLoadingIndex < loadingTexts.length - 1) {
+            currentLoadingIndex++;
+        } else {
+            clearInterval(intervalId); // Stop the interval after the last text
+        }
+    }, 6000); // Change text every 10000 milliseconds (10 seconds)
+
+    // Make a POST request to the API endpoint
+    const data = {
+        blogUrl: safeUserInput, // Use the sanitized URL
+    };
+
+    fetch("http://localhost:3000/api/analyze", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    })
+    .then((response) => {
+        loadingElement.style.display = 'none';
+        loadingTextElement.style.display = 'none';
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        return response.json();
+    })
+    .then((data) => {
+        console.log("RESPONSE DATA:", data);
+        renderContent(data);
+    })
+    .catch((error) => {
+        displayError("There was a problem with the request: " + error.message);
+    });
+}
+
+// Utility function to check if the URL is valid
+function isValidUrl(string) {
+    // Adding http:// if no protocol is specified
+    if (!string.match(/^[a-zA-Z]+:\/\//)) {
+        string = 'https://' + string;
+      	console.log("URL: ", string);
+    }
+    
+    try {
+        const url = new URL(string);
+        // Check if the hostname includes at least one dot, indicating a domain
+        return url.hostname.includes('.');
+    } catch (_) {
+        return false;
+    }
+}
+
+
+function renderContent(data) {
+  if (data.readability["Flesch Reading Ease Score (FRES)"] >= 90){
+  	data.readability.fresLevel = "5th Grade Level";
+  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 80){
+  	data.readability.fresLevel = "6th Grade Level";
+  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 70){
+  	data.readability.fresLevel = "7th Grade Level";
+  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 60){
+  	data.readability.fresLevel = "8th & 9th Grade Level";
+  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 50){
+  	data.readability.fresLevel = "High School Level";
+  } else if (data.readability["Flesch Reading Ease Score (FRES)"] >= 30){
+  	data.readability.fresLevel = "College Student Level";
+  } else {
+  	data.readability.fresLevel = "College Graduate Level";
+  }
+  
   const contentElement = document.getElementById("ai-content");
   // Clear existing content
   contentElement.innerHTML = "";
-
-  const accordionItem = document.createElement("div");
+  
+  const accordionItem = document.createElement('div');
   accordionItem.innerHTML = `
 <div class="accordion js-accordion">
+  <div class="accordion-url-container">
+    <div class="accordion-url-header">
+      <div class="ai-logo"><img src="https://images.squarespace-cdn.com/content/5fa369420e4abc36602d032b/1604898991473-3RXII05NIKJW50GM9IBV/Underground+Logo+w+text+side+orange.png?content-type=image%2Fpng" height="40"/></div>
+      <div>AI Content Analysis Report</div>
+      <div>${data.subdomain}</div>
+    </div>
+  </div>	
   <div class="accordion__item js-accordion-item ai-active">
     <div class="accordion-header js-accordion-header">
       <div class="header-title">
@@ -83,6 +262,8 @@ function renderContent(data) {
       <div class="accordion-body__contents">
         <div class="overall-feedchart-container">
           <div class="overall-feedback">
+            <div>URL Analyzed: ${data.originalUrl}</div>
+            <br/>
             <div class="accordion-subheader">Feedback</div>
             <div>
               ${data.overallGrade.Feedback}
@@ -100,14 +281,23 @@ function renderContent(data) {
         <div>
           2. ${data.overallGrade["Suggestions for Improvement"][1]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           3. ${data.overallGrade["Suggestions for Improvement"][2]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           4. ${data.overallGrade["Suggestions for Improvement"][3]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           5. ${data.overallGrade["Suggestions for Improvement"][4]}
+        </div>
+      </div>
+	  <div class="email-overlay" id="emailOverlay">
+        <div class="overlay-content">
+          <div>Unlock the full report by entering your email:</div>
+          <div>
+          <input type="email" id="emailInput" placeholder="Enter your email" />
+          <button class="submit-email-button" id="submitEmail">Submit</button>
+          </div>  
         </div>
       </div>
     </div>
@@ -156,16 +346,16 @@ function renderContent(data) {
         <div class="keyword-grade-container">
           <div class="suggested-keyword-container">
             <div class="accordion-subheader">Suggested Keywords for SEO</div>
-            <div>1. ${data.keywords["SEO Keywords"][0]}</div>
-            <div>2. ${data.keywords["SEO Keywords"][1]}</div>
-            <div>3. ${data.keywords["SEO Keywords"][2]}</div>
-            <div>4. ${data.keywords["SEO Keywords"][3]}</div>
-            <div>5. ${data.keywords["SEO Keywords"][4]}</div>
-            <div>6. ${data.keywords["SEO Keywords"][5]}</div>
-            <div>7. ${data.keywords["SEO Keywords"][6]}</div>
-            <div>8. ${data.keywords["SEO Keywords"][7]}</div>
-            <div>9. ${data.keywords["SEO Keywords"][8]}</div>
-            <div>10. ${data.keywords["SEO Keywords"][9]}</div>
+            <div>1. ${capitalizeWords(data.keywords["SEO Keywords"][0])}</div>
+            <div>2. ${capitalizeWords(data.keywords["SEO Keywords"][1])}</div>
+            <div>3. ${capitalizeWords(data.keywords["SEO Keywords"][2])}</div>
+            <div>4. ${capitalizeWords(data.keywords["SEO Keywords"][3])}</div>
+            <div>5. ${capitalizeWords(data.keywords["SEO Keywords"][4])}</div>
+            <div>6. ${capitalizeWords(data.keywords["SEO Keywords"][5])}</div>
+            <div>7. ${capitalizeWords(data.keywords["SEO Keywords"][6])}</div>
+            <div>8. ${capitalizeWords(data.keywords["SEO Keywords"][7])}</div>
+            <div>9. ${capitalizeWords(data.keywords["SEO Keywords"][8])}</div>
+            <div>10. ${capitalizeWords(data.keywords["SEO Keywords"][9])}</div>
           </div>
           <div class="keyword-usage-container">
             <div id="keyword-usage-chart"></div>
@@ -429,14 +619,23 @@ function renderContent(data) {
         <div>
           2. ${data.readability["Suggestions for Improvement"][1]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           3. ${data.readability["Suggestions for Improvement"][2]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           4. ${data.readability["Suggestions for Improvement"][3]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           5. ${data.readability["Suggestions for Improvement"][4]}
+        </div>
+      </div>
+	  <div class="email-overlay" id="emailOverlay">
+        <div class="overlay-content">
+          <div>Unlock the full report by entering your email:</div>
+          <div>
+          <input type="email" id="emailInput" placeholder="Enter your email" />
+          <button class="submit-email-button" id="submitEmail">Submit</button>
+          </div>  
         </div>
       </div>
     </div>
@@ -490,14 +689,23 @@ function renderContent(data) {
         <div>
           2. ${data.topicAuthority["Suggestions for Improvement"][1]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           3. ${data.topicAuthority["Suggestions for Improvement"][2]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           4. ${data.topicAuthority["Suggestions for Improvement"][3]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           5. ${data.topicAuthority["Suggestions for Improvement"][4]}
+        </div>
+      </div>
+	  <div class="email-overlay" id="emailOverlay">
+        <div class="overlay-content">
+          <div>Unlock the full report by entering your email:</div>
+          <div>
+          <input type="email" id="emailInput" placeholder="Enter your email" />
+          <button class="submit-email-button" id="submitEmail">Submit</button>
+          </div>  
         </div>
       </div>
     </div>
@@ -551,14 +759,23 @@ function renderContent(data) {
         <div>
           2. ${data.value["Suggestions for Improvement"][1]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           3. ${data.value["Suggestions for Improvement"][2]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           4. ${data.value["Suggestions for Improvement"][3]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           5. ${data.value["Suggestions for Improvement"][4]}
+        </div>
+      </div>
+	  <div class="email-overlay" id="emailOverlay">
+        <div class="overlay-content">
+          <div>Unlock the full report by entering your email:</div>
+          <div>
+          <input type="email" id="emailInput" placeholder="Enter your email" />
+          <button class="submit-email-button" id="submitEmail">Submit</button>
+          </div>  
         </div>
       </div>
     </div>
@@ -675,14 +892,23 @@ function renderContent(data) {
         <div>
           2. ${data.seo["Suggestions for Improvement"][1]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           3. ${data.seo["Suggestions for Improvement"][2]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           4. ${data.seo["Suggestions for Improvement"][3]}
         </div>
-        <div>
+        <div class="hidden-suggestion">
           5. ${data.seo["Suggestions for Improvement"][4]}
+        </div>
+      </div>
+	  <div class="email-overlay" id="emailOverlay">
+        <div class="overlay-content">
+          <div>Unlock the full report by entering your email:</div>
+          <div>
+          <input type="email" id="emailInput" placeholder="Enter your email" />
+          <button class="submit-email-button" id="submitEmail">Submit</button>
+          </div>  
         </div>
       </div>
     </div>
@@ -759,334 +985,420 @@ function renderContent(data) {
   </div>
   <!-- end of accordion -->
 `;
-
+  
   contentElement.appendChild(accordionItem);
-
+  
   accordion.init({ speed: 300, oneOpen: true });
-  $(document).on("click", ".js-accordion-header", function () {
-    accordion.toggle($(this));
-  });
-
+  $(document).on('click', '.js-accordion-header', function() {
+        accordion.toggle($(this));
+    });
+  
   // Render Circle Grade Charts
-  renderGradeChart(
-    "overall-chart",
-    parseFloat(data.overallGrade.Rating),
-    parseFloat(data.overallGrade["Potential Rating"])
-  );
-  renderGradeChart(
-    "readability-chart",
-    parseFloat(data.readability.Rating),
-    parseFloat(data.readability["Potential Rating"])
-  );
-  renderGradeChart(
-    "topicAuthority-chart",
-    parseFloat(data.topicAuthority.Rating),
-    parseFloat(data.topicAuthority["Potential Rating"])
-  );
-  renderGradeChart(
-    "contentValue-chart",
-    parseFloat(data.value.Rating),
-    parseFloat(data.value["Potential Rating"])
-  );
-  renderGradeChart(
-    "seo-chart",
-    parseFloat(data.seo.Rating),
-    parseFloat(data.seo["Potential Rating"])
-  );
-  renderGradeChart(
-    "keyword-usage-chart",
-    parseFloat(data.moreGrades["Keyword Usage Rating"])
-  );
-  renderGradeChart(
-    "meta-chart",
-    parseFloat(data.moreGrades["Meta Tags Rating"])
-  );
+renderGradeChart('overall-chart', parseFloat(data.overallGrade.Rating), parseFloat(data.overallGrade["Potential Rating"]));
+renderGradeChart('readability-chart', parseFloat(data.readability.Rating), parseFloat(data.readability["Potential Rating"]));
+renderGradeChart("topicAuthority-chart", parseFloat(data.topicAuthority.Rating), parseFloat(data.topicAuthority["Potential Rating"]));
+renderGradeChart("contentValue-chart", parseFloat(data.value.Rating), parseFloat(data.value["Potential Rating"]));
+renderGradeChart("seo-chart", parseFloat(data.seo.Rating), parseFloat(data.seo["Potential Rating"]));
+renderGradeChart('keyword-usage-chart', parseFloat(data.moreGrades["Keyword Usage Rating"]));
+renderGradeChart('meta-chart', parseFloat(data.moreGrades["Meta Tags Rating"]));
 
-  // Render Overall Area Chart
-  renderAreaChart(data);
-
-  updateFRESChart(
-    parseFloat(data.readability["Flesch Reading Ease Score (FRES)"])
-  ); // Call this function with the actual data value
-
+// Render Overall Area Chart
+renderAreaChart(data);
+  
+  updateFRESChart(parseFloat(data.readability["Flesch Reading Ease Score (FRES)"]));  // Call this function with the actual data value
+  
   var tovRating = 0;
-  if (data.readability["Tone of Voice"] === "Casual") {
-    tovRating = 20;
-  } else if (data.readability["Tone of Voice"] === "Somewhat Casual") {
-    tovRating = 40;
-  } else if (data.readability["Tone of Voice"] === "Neutral") {
-    tovRating = 60;
-  } else if (data.readability["Tone of Voice"] === "Somewhat Formal") {
-    tovRating = 80;
-  } else if (data.readability["Tone of Voice"] === "Formal") {
-    tovRating = 100;
+  if (data.readability["Tone of Voice"] === "Casual"){
+  	tovRating = 20;
+  } else if (data.readability["Tone of Voice"] === "Somewhat Casual"){
+  	tovRating = 40;
+  } else if (data.readability["Tone of Voice"] === "Neutral"){
+  	tovRating = 60;
+  } else if (data.readability["Tone of Voice"] === "Somewhat Formal"){
+  	tovRating = 80;
+  } else if (data.readability["Tone of Voice"] === "Formal"){
+  	tovRating = 100;
   }
-
-  updateTOVChart(tovRating); // Call this function with the actual data value
-
+  
+  updateTOVChart(tovRating);  // Call this function with the actual data value
+  
+  createEmailUnlock(data);
+  
   // Setup modals
-  setupModal(".info-overall", "ovrModal");
-  setupModal(".info-targetAudience", "targetAudienceModal");
-  setupModal(".info-readability", "readabilityModal");
-  setupModal(".info-topicAuthority", "topicAuthorityModal");
-  setupModal(".info-contentValue", "contentValueModal");
-  setupModal(".info-seo", "seoModal");
-  setupModal(".info-meta", "metaModal");
-  setupModal(".info-keywordUsage", "keywordUsageModal");
-  setupModal(".info-fres", "fresModal");
-  setupModal(".info-tov", "tovModal");
+setupModal(".info-overall", "ovrModal");
+setupModal(".info-targetAudience", "targetAudienceModal");
+setupModal(".info-readability", "readabilityModal");
+setupModal(".info-topicAuthority", "topicAuthorityModal");
+setupModal(".info-contentValue", "contentValueModal");
+setupModal(".info-seo", "seoModal");
+setupModal(".info-meta", "metaModal");
+setupModal(".info-keywordUsage", "keywordUsageModal");
+setupModal(".info-fres", "fresModal");
+setupModal(".info-tov", "tovModal");
 }
-
-// AI Report Accordion
-var accordion = (function () {
-  var $accordion = $(".js-accordion");
-  var $accordion_header = $accordion.find(".js-accordion-header");
-  var $accordion_item = $(".js-accordion-item");
-
-  // default settings
+  
+ // AI Report Accordion
+var accordion = (function(){
+  
+  var $accordion = $('.js-accordion');
+  var $accordion_header = $accordion.find('.js-accordion-header');
+  var $accordion_item = $('.js-accordion-item');
+ 
+  // default settings 
   var settings = {
     // animation speed
     speed: 400,
-
+    
     // close all other accordion items if true
-    oneOpen: false,
+    oneOpen: false
   };
-
+    
   return {
     // pass configurable object literal
-    init: function ($settings) {
-      $accordion_header.on("click", function () {
+    init: function($settings) {
+      $accordion_header.on('click', function() {
         accordion.toggle($(this));
       });
-
-      $.extend(settings, $settings);
-
+      
+      $.extend(settings, $settings); 
+      
       // ensure only one accordion is active if oneOpen is true
-      if (settings.oneOpen && $(".js-accordion-item.ai-active").length > 1) {
-        $(".js-accordion-item.ai-active:not(:first)").removeClass("ai-active");
+      if(settings.oneOpen && $('.js-accordion-item.ai-active').length > 1) {
+        $('.js-accordion-item.ai-active:not(:first)').removeClass('ai-active');
       }
-
+      
       // reveal the active accordion bodies
-      $(".js-accordion-item.ai-active").find("> .js-accordion-body").show();
+      $('.js-accordion-item.ai-active').find('> .js-accordion-body').show();
     },
-    toggle: function ($this) {
-      if (
-        settings.oneOpen &&
-        $this[0] !=
-          $this
-            .closest(".js-accordion")
-            .find("> .js-accordion-item.ai-active > .js-accordion-header")[0]
-      ) {
-        $this
-          .closest(".js-accordion")
-          .find("> .js-accordion-item")
-          .removeClass("ai-active")
-          .find(".js-accordion-body")
-          .slideUp();
+    toggle: function($this) {
+            
+      if(settings.oneOpen && $this[0] != $this.closest('.js-accordion').find('> .js-accordion-item.ai-active > .js-accordion-header')[0]) {
+        $this.closest('.js-accordion')
+               .find('> .js-accordion-item') 
+               .removeClass('ai-active')
+               .find('.js-accordion-body')
+               .slideUp();
       }
-
+      
       // show/hide the clicked accordion item
-      $this.closest(".js-accordion-item").toggleClass("ai-active");
+      $this.closest('.js-accordion-item').toggleClass('ai-active');
       $this.next().stop().slideToggle(settings.speed);
-    },
-  };
+    }
+  }
 })();
 
 //$(document).ready(function(){
-//accordion.init({ speed: 300, oneOpen: true });
+  //accordion.init({ speed: 300, oneOpen: true });
 //});
 
-function renderGradeChart(chartID, grade, potential) {
-  Highcharts.chart(chartID, {
-    chart: {
-      type: "solidgauge",
-      backgroundColor: "transparent",
-      reflow: true,
-      marginTop: 10,
-      marginRight: 10,
-      marginBottom: 10,
-      marginLeft: 10,
-    },
-    title: null,
-    pane: {
-      center: ["50%", "50%"],
-      size: "100%",
-      startAngle: 0,
-      endAngle: 360,
-      background: {
-        backgroundColor: "#454a58",
-        innerRadius: "75%",
-        outerRadius: "100%",
-        shape: "arc",
-        borderColor: "black",
+  
+// Setup functionality for Email Input and unlocking full AI report 
+function createEmailUnlock(data){
+
+  var emailOverlays = document.querySelectorAll('.email-overlay');
+  var submitEmailButtons = document.querySelectorAll('.submit-email-button');
+
+  function validateEmail(email) {
+    var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
+  
+  function sendEmail(email, data) {
+    fetch('http://localhost:3000/api/send-input-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
       },
-    },
-    tooltip: {
-      enabled: false,
-    },
-    yAxis: {
-      min: 0,
-      max: 10,
-      //stops: [
-      //[0.1, '#e74c3c'], // red
-      //[0.5, '#f1c40f'], // yellow
-      //[0.9, '#2ecc71'] // green
-      //],
-      minorTickInterval: null,
-      tickPixelInterval: 400,
-      tickWidth: 0,
-      gridLineWidth: 0,
-      gridLineColor: "black",
-      labels: {
-        enabled: false,
-      },
-      title: {
-        enabled: false,
-      },
-    },
-    credits: {
-      enabled: false,
-    },
-    plotOptions: {
-      solidgauge: {
-        innerRadius: "75%",
-        dataLabels: {
-          verticalAlign: "center",
-          y: -40,
-          borderWidth: 0,
-          useHTML: true,
-          style: {
-            color: "white",
-            fontSize: "10px",
-            fontWeight: "lighter", // Change the font weight to lighter
-            // You can add more font properties if needed
-          },
-        },
-      },
-    },
-    series: [
-      {
-        data: [{ y: potential, color: "#4fb8ab" }],
-        dataLabels: {
-          enabled: false,
-        },
-      },
-      {
-        data: [{ y: grade, color: "rgb(238,85,53)" }],
-        dataLabels: {
-          format: '<p style="text-align:center; font-size: 22px;">{y}</p>',
-          //y: 0
-        },
-      },
-    ],
+      body: JSON.stringify({ email, data })
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error('Failed to send email');
+      }
+    }).then(result => {
+      console.log(result);
+    }).catch(error => {
+      console.error(error);
+    });
+  }
+
+  submitEmailButtons.forEach(function(button) {
+    button.addEventListener('click', function () {
+      console.log('Adding event listener to button:', button);
+      var emailInput = this.previousElementSibling.value;
+      if (validateEmail(emailInput)) {
+        sendEmail(emailInput, data);
+        emailOverlays.forEach(function(overlay) {
+          overlay.style.display = 'none';
+        });
+        document.querySelectorAll('.hidden-suggestion').forEach(function (item) {
+          item.style.filter = 'none';
+        });
+      } else {
+        alert('Please enter a valid email.');
+      }
+    });
   });
+}  
+  
+function renderGradeChart(chartID, grade, potential) {
+    Highcharts.chart(chartID, {
+        chart: {
+            type: 'solidgauge',
+            backgroundColor: 'transparent',
+            reflow: true,
+            marginTop: 10,
+            marginRight: 10,
+            marginBottom: 10,
+            marginLeft: 10,
+        },
+        title: null,
+        pane: {
+            center: ['50%', '50%'],
+            size: '100%',
+            startAngle: 0,
+            endAngle: 360,
+            background: {
+                backgroundColor: '#454a58',
+                innerRadius: '75%',
+                outerRadius: '100%',
+                shape: 'arc',
+                borderColor: 'black'
+            }
+        },
+        tooltip: {
+            enabled: false
+        },
+        yAxis: {
+            min: 0,
+            max: 10,
+            //stops: [
+                //[0.1, '#e74c3c'], // red
+                //[0.5, '#f1c40f'], // yellow
+                //[0.9, '#2ecc71'] // green
+            //],
+            minorTickInterval: null,
+            tickPixelInterval: 400,
+            tickWidth: 0,
+            gridLineWidth: 0,
+            gridLineColor: 'black',
+            labels: {
+                enabled: false
+            },
+            title: {
+                enabled: false
+            }
+        },
+        credits: {
+            enabled: false
+        },
+        plotOptions: {
+            solidgauge: {
+                innerRadius: '75%',
+                dataLabels: {
+                    verticalAlign: 'center',
+                    y: -40,
+                    borderWidth: 0,
+                    useHTML: true,
+                    style: {
+                        color: "white",
+                        fontSize: '10px',
+                        fontWeight: 'lighter' // Change the font weight to lighter
+                        // You can add more font properties if needed
+                    }
+                }
+            }
+        },
+        series: [{
+            data: [{y: potential, color: '#4fb8ab'}],
+            dataLabels: {
+            enabled: false
+            }
+        },{
+            data: [{y: grade, color: 'rgb(238,85,53)'}],
+            dataLabels: {
+                format: '<p style="text-align:center; font-size: 22px;">{y}</p>',
+                //y: 0
+            }
+        }]
+    });
 }
 
 function renderAreaChart(data) {
-  Highcharts.chart("area-chart", {
-    chart: {
-      polar: true,
-      type: "area",
-      backgroundColor: null,
-      reflow: true,
-      marginTop: 22,
-      marginRight: 0,
-      marginBottom: 0,
-      marginLeft: 0,
-      style: {
-        fontFamily: "Open Sans Condensed, sans-serif",
-        fontSize: "16px",
-      },
-    },
-
-    title: {
-      text: null,
-      x: 0,
-    },
-
-    credits: { enabled: false },
-
-    exporting: {
-      enabled: false,
-    },
-
-    pane: {
-      size: "100%",
-    },
-
-    xAxis: {
-      categories: [
-        "Overall",
-        "Content Value",
-        "Readability",
-        "Topic Authority",
-        "SEO",
-      ],
-      tickmarkPlacement: "on",
-      lineWidth: 0,
-      gridLineColor: "grey",
-      labels: {
+    Highcharts.chart('area-chart', {
+        chart: {
+        polar: true,
+        type: "area",
+        backgroundColor: null,
+        reflow: true,
+            marginTop: 22,
+            marginRight: 0,
+            marginBottom: 0,
+            marginLeft: 0,
         style: {
-          color: "grey",
+          fontFamily: "Open Sans Condensed, sans-serif",
+          fontSize: "16px",
         },
       },
-    },
 
-    yAxis: {
-      gridLineInterpolation: "polygon",
-      lineWidth: 0,
-      gridLineColor: "#C0C0C0",
-      min: 1,
-      max: 10,
-      tickInterval: 2,
-      labels: {
+      title: {
+        text: null,
+        x: 0,
+      },
+      
+      credits: { enabled: false },
+
+      exporting: {
         enabled: false,
       },
-      gridLineColor: "grey",
-    },
 
-    tooltip: {
-      shared: false,
-      pointFormat:
-        '<span style="color:"white">{series.name}: <b>{point.y:,.0f}</b><br/>',
-    },
-
-    legend: {
-      align: "right",
-      verticalAlign: "top",
-      y: 70,
-      layout: "vertical",
-      enabled: false,
-    },
-
-    series: [
-      {
-        name: "Potential",
-        data: [
-          parseFloat(data.overallGrade["Potential Rating"]),
-          parseFloat(data.value["Potential Rating"]),
-          parseFloat(data.readability["Potential Rating"]),
-          parseFloat(data.topicAuthority["Potential Rating"]),
-          parseFloat(data.seo["Potential Rating"]),
-        ],
-        pointPlacement: "on",
-        color: "#4fb8ab", // Outline color
-        type: "area", // This will create just the outline without fill
-        lineWidth: 2.0, // Setting line width for better visibility
-        fillOpacity: 0.3, // Ensures there is no fill
+      pane: {
+        size: "100%",
       },
-      {
-        name: "Rating",
-        data: [
-          parseFloat(data.overallGrade.rating),
-          parseFloat(data.value.rating),
-          parseFloat(data.readability.rating),
-          parseFloat(data.topicAuthority.rating),
-          parseFloat(data.seo.rating),
+
+      xAxis: {
+        categories: [
+          "Overall",
+          "Content Value",
+          "Readability",
+          "Topic Authority",
+          "SEO"
         ],
-        pointPlacement: "on",
-        color: "#ef6336",
+        tickmarkPlacement: "on",
+        lineWidth: 0,
+        gridLineColor: "grey",
+        labels: {
+            style: {
+                color: 'grey'
+            }
+        }
       },
-    ],
-  });
+
+      yAxis: {
+        gridLineInterpolation: "polygon",
+        lineWidth: 0,
+        gridLineColor: "#C0C0C0",
+        min: 1,
+        max: 10,
+        tickInterval: 2,
+        labels: {
+          enabled: false,
+        },
+        gridLineColor: "grey",
+      },
+
+      tooltip: {
+        shared: false,
+        pointFormat:
+          '<span style="color:"white">{series.name}: <b>{point.y:,.0f}</b><br/>',
+      },
+
+      legend: {
+        align: "right",
+        verticalAlign: "top",
+        y: 70,
+        layout: "vertical",
+        enabled: false,
+      },
+
+      series: [
+        {
+                name: "Potential",
+                data: [
+                    parseFloat(data.overallGrade["Potential Rating"]),
+                    parseFloat(data.value["Potential Rating"]),
+                    parseFloat(data.readability["Potential Rating"]),
+                    parseFloat(data.topicAuthority["Potential Rating"]),
+                    parseFloat(data.seo["Potential Rating"]),
+                ],
+                pointPlacement: "on",
+                color: "#4fb8ab", // Outline color
+                type: "area", // This will create just the outline without fill
+                lineWidth: 2.0, // Setting line width for better visibility
+                fillOpacity: 0.3 // Ensures there is no fill
+            },
+        {
+          name: "Rating",
+          data: [
+            parseFloat(data.overallGrade.Rating),
+            parseFloat(data.value.Rating),
+            parseFloat(data.readability.Rating),
+            parseFloat(data.topicAuthority.Rating),
+            parseFloat(data.seo.Rating),
+          ],
+          pointPlacement: "on",
+          color: "#ef6336",
+        },
+      ],
+    });
 }
+
+// Fill FRES button chart
+function updateFRESChart(percentage) {
+  const progressBar = document.querySelector('.fres-button .progress');
+  progressBar.style.width = percentage + '%';
+}
+  
+// Fill TOV button chart
+function updateTOVChart(percentage) {
+  const progressBar = document.querySelector('.tov-button .progress');
+  progressBar.style.width = percentage + '%';
+}
+  
+// Function to initialize modal functionality
+function setupModal(buttonSelector, modalId) {
+    var modal = document.getElementById(modalId);
+    var btn = document.querySelector(buttonSelector);
+    var spans = modal.getElementsByClassName("close");
+
+    // Event listener to open the modal
+    btn.onclick = function() {
+        // Close any already open modals
+        closeAnyOpenModal();
+        // Display the current modal
+        modal.style.display = "block";
+        // Set the current modal as open
+        currentOpenModal = modal;
+    };
+
+    // Event listeners to close the modal
+    Array.from(spans).forEach(function(span) {
+        span.onclick = function() {
+            modal.style.display = "none";
+            currentOpenModal = null;
+        };
+    });
+}
+
+// Variable to keep track of the currently open modal
+var currentOpenModal = null;
+
+// Function to close any open modal
+function closeAnyOpenModal() {
+    if (currentOpenModal) {
+        currentOpenModal.style.display = "none";
+        currentOpenModal = null;
+    }
+}
+
+// Global click handler to close modals when clicked outside
+window.onclick = function(event) {
+    if (event.target === currentOpenModal) {
+        currentOpenModal.style.display = "none";
+        currentOpenModal = null;
+    }
+};
+
+</script>
+<script>
+  $(document).ready(function() { 
+		$('<a href="/blog" class="eventitem-backlink">Blog Homepage</a>').insertBefore('.blog-item-title');
+	});
+</script>
+<style>
+  a.eventitem-backlink {
+    margin: 0;
+    margin-bottom: 20px;
+}
+</style>

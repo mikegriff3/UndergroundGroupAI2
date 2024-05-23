@@ -454,7 +454,7 @@ AI Landing Page Accordion
 }
 .a2{
   background-image: 
-   linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.5)),  url("https://images.squarespace-cdn.com/content/5fa369420e4abc36602d032b/107e8c3f-1c76-4163-a9c1-98ae8f646a9b/pexels-photo-5490196.jpg?content-type=image%2Fpng");
+   linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.5)),  url("https://images.squarespace-cdn.com/content/5fa369420e4abc36602d032b/801d4537-2826-4bdc-a045-4e29656c5187/1_uvQCWIZ3amjtMWtkvDrgug.jpeg?content-type=image%2Fjpeg");
 }
 .a3{
   background-image: 
@@ -466,7 +466,7 @@ AI Landing Page Accordion
 }
 .a5{
   background-image: 
- linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),    url("https://images.squarespace-cdn.com/content/5fa369420e4abc36602d032b/d70c1745-3429-45c2-98f7-116d00163de2/pexels-photo-3762940.jpg?content-type=image%2Fpng");
+ linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),    url("https://images.squarespace-cdn.com/content/5fa369420e4abc36602d032b/e808a8a1-aa92-4177-9977-48d139085912/Stock-market-share-market-125.jpeg?content-type=image%2Fjpeg");
 }
 /* End Background images */
 
@@ -604,7 +604,8 @@ section[data-section-id="65e0d57621bd16617b7352f4"] .content-wrapper{
         rgba(0, 0, 0, 0.2),
         rgba(0, 0, 0, 0.2)
     ), url('https://images.squarespace-cdn.com/content/5fa369420e4abc36602d032b/866a06dd-80a9-482a-9b49-59f8586468ff/mikegriff3_background_image_grey_orange_servers._ai_computers_d6a3bc8d-dba5-4fac-bf12-83ad515d8c26.png?content-type=image%2Fpng');*/ 
-    background-size: cover;
+  	background-repeat: no-repeat !important;
+    background-size: cover !important;
     background-position: center;
   min-height: 80vh;
   margin-left: 0 !important;
@@ -613,6 +614,7 @@ section[data-section-id="65e0d57621bd16617b7352f4"] .content-wrapper{
         rgba(0, 0, 0, 0.4), 
         rgba(0, 0, 0, 0.4)
     ), url('https://images.squarespace-cdn.com/content/5fa369420e4abc36602d032b/ceb97e79-5389-4601-bf6b-95870ff1a064/mikegriff3_background_image_grey_orange_servers._ai_computers_b2646206-e640-4cc7-8364-5bec7f54159b.png?content-type=image%2Fpng');
+  max-width: 100% !important;
 }
 
 #collection-65e0d09e83f1af598adcce0a
@@ -620,17 +622,21 @@ section[data-section-id="65e0d57621bd16617b7352f4"] .content-wrapper{
     padding-bottom: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
-    /*overflow: hidden;*/
+    overflow: hidden;
   }
 
 #ai-content {
   width: 100%;
-  padding-left: 60px;
-  padding-right: 60px;
+  /*padding-left: 60px;
+  padding-right: 60px;*/
   min-height: 80vh;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+}
+
+.analysis-hero-text{
+  padding-left: 60px;
 }
 
 .analysis-title-container{
@@ -806,6 +812,96 @@ section[data-section-id="65e0d57621bd16617b7352f4"] .content-wrapper{
   box-shadow: rgba(0, 0, 0, 0.2) 0px 20px 30px;
 }
 
+/*/////////////////////////////////////
+Analysis Page How It Works Section
+*//////////////////////////////////////
+
+section[data-section-id="66400f9d18a3d01cbb6d3ab3"] .content-wrapper {
+  background: #191c1f !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+  max-width: 100% !important;
+}
+
+.circle-section-title{
+  color: white;
+  font-size: 26px;
+  padding-left: 20px;
+  margin-top: -20px !important;
+}
+
+.circle-section-title span{
+  color: #ee5535;
+}
+
+.circle-section-title-container{
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.circle-section-container{
+  display: flex;
+  justify-content: center;
+}
+
+.circle-container {
+    position: relative;
+    width: 900px; /* Updated to 1000px */
+    height: 900px; /* Updated to 1000px */
+    border: 0px solid #000; /* Optional: for visual guide */
+    border-radius: 50%; /* Keeps the container circular */
+    color: black;
+}
+
+.circle-segment {
+    text-align: center;
+    width: 400px; /* Adjust if needed */
+    height: fit-content; /* Adjust if needed */
+     /* For visibility */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0% 0%; /* Pivot from the center of the container */
+    font-size: 18px;
+  	color: white;
+}
+
+/* Position each segment with transform: rotate() and translate() */
+.circle-segment:nth-child(1) {
+    transform: translate(-50%, -50%) rotate(-90deg) translate(350px) rotate(90deg); /* Adjusted translate for larger radius */
+}
+.circle-segment:nth-child(2) {
+    transform: translate(-50%, -50%) rotate(-25deg) translate(390px) rotate(25deg);
+}
+.circle-segment:nth-child(3) {
+    transform: translate(-50%, -50%) rotate(30deg) translate(270px) rotate(-30deg);
+  	margin-top: 10px;
+}
+.circle-segment:nth-child(4) {
+    transform: translate(-50%, -50%) rotate(155deg) translate(270px) rotate(-155deg);
+  	margin-top: 10px;
+}
+.circle-segment:nth-child(5) {
+    transform: translate(-50%, -50%) rotate(203deg) translate(390px) rotate(-203deg);
+}
+
+.fa-icon{
+  font-size: 40px;
+  margin-bottom: 15px;
+  color: white;
+}
+
+.circle-title{
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: white;
+}
+
+/*/////////////////////////////////////
+Analysis Page FAQ Section
+*//////////////////////////////////////
 .faq{
   margin-top: -40px;
 }
@@ -865,6 +961,43 @@ section[data-section-id="65e0d57621bd16617b7352f4"]{
 .accordion-header,
 .accordion-body {
   background: #1e2631;
+}
+
+.accordion-url-container{
+  border-bottom: 1px solid black;
+}
+
+.accordion-url-header {
+  padding: 1.5em /*1.5em*/;
+  background: #151c25;
+  color: white;
+  font-size: .8em;
+  letter-spacing: .1em;
+  transition: all .3s;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-logo{
+  display: flex;
+  align-items: center;
+}
+
+.accordion-url-header .ai-logo,
+.accordion-url-header div:last-child {
+  flex: 1; /* Allows these elements to grow and take up space */
+  text-align: left; /* Keeps content left-aligned in the first div */
+}
+
+.accordion-url-header div:last-child {
+  text-align: right; /* Keeps content right-aligned in the last div */
+}
+
+.accordion-url-header div:nth-child(2) {
+  flex: 0 1 auto; /* Prevents the middle div from growing or shrinking */
+  text-align: center; /* Centers the text in the middle div */
 }
 
 .accordion-header {
@@ -935,6 +1068,7 @@ section[data-section-id="65e0d57621bd16617b7352f4"]{
   background: #1e2631;
   color: white;
   display: none;
+  position: relative;
 }
 
 .accordion-body__contents {
@@ -1198,6 +1332,54 @@ section[data-section-id="65e0d57621bd16617b7352f4"]{
   overflow: auto; /* Enable scroll if needed */
   background-color: rgb(0,0,0); /* Fallback color */
   background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+}
+
+.hidden-suggestion{
+  position: relative;
+  z-index: 1;
+  transition: opacity 0.3s;
+  filter: blur(3px);
+}
+
+.email-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 32%;
+  background: rgba(30,38,49, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 2;
+}
+
+.overlay-content {
+  text-align: center;
+}
+
+.email-overlay input[type="email"] {
+  padding: 0.2em;
+  margin-top: 1em;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 0.7em;
+}
+
+.email-overlay button {
+  padding: 0.25em 1em;
+  margin-top: 1em;
+  background-color: #ee5535;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.7em;
+}
+
+.email-overlay button:hover {
+  background-color: #4fb8ab;
 }
 
 @media screen and (max-width: 1000px) {
