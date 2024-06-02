@@ -36,10 +36,10 @@ const transporter = nodemailer.createTransport({
 });
 
 app.post("/api/send-input-email", (req, res) => {
-  const { email, data } = req.body;
+  const { email, data, subject } = req.body;
   console.log("Testing data for email: ", data);
 
-  const mailOptions = createMailOptions(email, data);
+  const mailOptions = createMailOptions(email, data, subject);
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {

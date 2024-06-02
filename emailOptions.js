@@ -1,11 +1,11 @@
-export function createMailOptions(email, data) {
+export function createMailOptions(email, data, subject) {
   const sub = data?.subdomain || "N/A";
   const urlAnalyzed = data?.originalUrl || "N/A";
 
   return {
     from: "mike@theundergroundgroup.com",
     to: "mike@theundergroundgroup.com",
-    subject: "New Email Submission - AI Content Analysis Report",
+    subject: `${subject}`,
     text: `
     New email submitted: ${email}
     Subdomain: ${sub}
