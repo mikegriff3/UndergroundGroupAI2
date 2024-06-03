@@ -19,67 +19,192 @@ import {
   RunnablePassthrough,
 } from "@langchain/core/runnables";
 import { createMailOptions } from "./emailOptions.js";
+import rateLimit from "express-rate-limit";
+import Redis from "redis";
+import RateLimitRedisStore from "rate-limit-redis";
+
+// const app = express();
+// app.use(cors());
+
+// // Create a Redis client
+// const redisClient = Redis.createClient();
+
+// // Handle Redis errors
+// redisClient.on("error", (err) => {
+//   console.error("Redis error:", err);
+// });
+
+// // List of IP addresses to exclude from rate limiting
+// // const excludedIPs = ['172.91.141.128'];
+// const excludedIPs = [];
+
+// // Define the rate limiting rule with Redis as the store and a skip function
+// const apiLimiter = rateLimit({
+//   store: new RateLimitRedisStore({
+//     sendCommand: (...args) => redisClient.sendCommand(args),
+//   }),
+//   windowMs: 24 * 60 * 60 * 1000, // 24 hours
+//   max: 2, // limit each IP to 2 requests per windowMs
+//   message:
+//     "You have exceeded the 2 AI Content Analysis reports in 24 hours limit!",
+//   headers: true,
+//   skip: (req, res) => excludedIPs.includes(req.ip),
+// });
+
+// // Apply the rate limiting rule to a specific endpoint
+// app.use("/api/analyze", apiLimiter);
+
+// // Middleware to parse JSON bodies
+// app.use(express.json());
+
+// // Send an email when someone inputs their email for full report
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: "mike@theundergroundgroup.com",
+//     pass: "iowc rovo noxo jkga",
+//   },
+// });
+
+// app.post("/api/send-input-email", (req, res) => {
+//   const { email, data, subject } = req.body;
+//   console.log("Testing data for email: ", data);
+
+//   const mailOptions = createMailOptions(email, data, subject);
+
+//   transporter.sendMail(mailOptions, (error, info) => {
+//     if (error) {
+//       return res.status(500).send(error.toString());
+//     }
+//     res.send("Email sent: " + info.response);
+//   });
+// });
+
+// // Define a route to process API requests to '/api/analyze'
+// app.post("/api/analyze", async (req, res) => {
+//   try {
+//     //console.log("REQUEST:", req);
+//     // Ensure you have the necessary request data
+//     const { blogUrl } = req.body;
+
+//     // Call your analysis function with the provided URL
+//     const results = await runAnalysis(blogUrl);
+
+//     // Respond with the analysis results
+//     res.json(results);
+//   } catch (error) {
+//     // Handle errors
+//     console.error("Error:", error);
+//     res
+//       .status(500)
+//       .json({ error: "An error occurred while processing the request" });
+//   }
+// });
+
+// // Define a route
+// app.get("/", (req, res) => {
+//   res.send("API for Underground Group AI");
+// });
+
+// // Start the server
+// const port = process.env.PORT || 3000;
+// app.listen(port, () => {
+//   console.log(`Server is running on port ${port}`);
+// });
 
 const app = express();
 app.use(cors());
+app.use(express.json()); // Middleware to parse JSON bodies
 
-// Middleware to parse JSON bodies
-app.use(express.json());
-
-// Send an email when someone inputs their email for full report
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "mike@theundergroundgroup.com",
-    pass: "iowc rovo noxo jkga",
-  },
+app.use((req, res, next) => {
+  console.log(`Incoming request from IP: ${req.ip}`);
+  next();
 });
 
-app.post("/api/send-input-email", (req, res) => {
-  const { email, data, subject } = req.body;
-  console.log("Testing data for email: ", data);
+(async () => {
+  // Create a Redis client
+  const redisClient = Redis.createClient({ url: process.env.REDIS_URL });
 
-  const mailOptions = createMailOptions(email, data, subject);
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      return res.status(500).send(error.toString());
-    }
-    res.send("Email sent: " + info.response);
+  // Handle Redis errors
+  redisClient.on("error", (err) => {
+    console.error("Redis error:", err);
   });
-});
 
-// Define a route to process API requests to '/api/analyze'
-app.post("/api/analyze", async (req, res) => {
-  try {
-    //console.log("REQUEST:", req);
-    // Ensure you have the necessary request data
-    const { blogUrl } = req.body;
+  // Connect the Redis client
+  await redisClient.connect();
 
-    // Call your analysis function with the provided URL
-    const results = await runAnalysis(blogUrl);
+  // List of IP addresses to exclude from rate limiting
+  //const excludedIPs = ["::1", "127.0.0.1"];
+  const excludedIPs = [];
 
-    // Respond with the analysis results
-    res.json(results);
-  } catch (error) {
-    // Handle errors
-    console.error("Error:", error);
-    res
-      .status(500)
-      .json({ error: "An error occurred while processing the request" });
-  }
-});
+  // Define the rate limiting rule with Redis as the store and a skip function
+  const apiLimiter = rateLimit({
+    store: new RateLimitRedisStore({
+      sendCommand: (...args) => redisClient.sendCommand(args),
+    }),
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    max: 2, // limit each IP to 2 requests per windowMs
+    message:
+      "You have exceeded the 2 AI Content Analysis reports in 24 hours limit!",
+    headers: true,
+    skip: (req, res) => excludedIPs.includes(req.ip),
+  });
 
-// Define a route
-app.get("/", (req, res) => {
-  res.send("API for Underground Group AI");
-});
+  // Apply the rate limiting rule to a specific endpoint
+  app.use("/api/analyze", apiLimiter);
 
-// Start the server
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+  // Send an email when someone inputs their email for full report
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "mike@theundergroundgroup.com",
+      pass: "iowc rovo noxo jkga",
+    },
+  });
+
+  app.post("/api/send-input-email", (req, res) => {
+    const { email, data, subject } = req.body;
+    console.log("Testing data for email: ", data);
+
+    const mailOptions = createMailOptions(email, data, subject);
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return res.status(500).send(error.toString());
+      }
+      res.send("Email sent: " + info.response);
+    });
+  });
+
+  // Define a route to process API requests to '/api/analyze'
+  app.post("/api/analyze", async (req, res) => {
+    try {
+      const { blogUrl } = req.body;
+
+      // Call your analysis function with the provided URL
+      const results = await runAnalysis(blogUrl);
+
+      // Respond with the analysis results
+      res.json(results);
+    } catch (error) {
+      console.error("Error:", error);
+      res
+        .status(500)
+        .json({ error: "An error occurred while processing the request" });
+    }
+  });
+
+  // Define a route
+  app.get("/", (req, res) => {
+    res.send("API for Underground Group AI");
+  });
+
+  // Start the server
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+})();
 
 const openAIApiKey = process.env.OPENAI_API_KEY;
 
