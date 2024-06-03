@@ -11,7 +11,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SupabaseVectorStore } from "@langchain/community/vectorstores/supabase";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { combineDocuments } from "./combineDocuments.js";
-import { generateRandomID } from "./generateRandomId.js";
+import { generateRandomID } from "./generateRandomID.js";
 import { buildRetriever } from "./retriever.js";
 import { buildMetasRetriever } from "./metasRetriever.js";
 import {
