@@ -35,7 +35,7 @@ export async function scrapeBlog(
   const domainNameWithTLD = extractDomainNameWithTLD(url);
 
   try {
-    if (visitedLinks.has(url) || pageCount >= 20) {
+    if (visitedLinks.has(url) || visitedLinks.size >= 20) {
       return {
         originalUrl,
         domainNameWithTLD,
@@ -79,6 +79,9 @@ export async function scrapeBlog(
     aggregatedMetaTags += metaTags + "\n\n";
 
     for (const link of links) {
+      if (visitedLinks.size >= 20) {
+        break;
+      }
       if (link && link.startsWith(url)) {
         const { aggregatedText: newText, aggregatedMetaTags: newMetaTags } =
           await scrapeBlog(
