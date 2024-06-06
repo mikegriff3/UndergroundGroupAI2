@@ -134,8 +134,16 @@ app.use((req, res, next) => {
   await redisClient.connect();
 
   // List of IP addresses to exclude from rate limiting
-  //const excludedIPs = ["::1", "127.0.0.1"];
-  const excludedIPs = [];
+  const excludedIPs = ["2603:8001:6500:f367:adea:61b6:18b1:f88e", "10.1.27.4"];
+  //const excludedIPs = [];
+
+  // Helper function to normalize IP addresses
+  const normalizeIp = (ip) => {
+    if (ip.startsWith("::ffff:")) {
+      return ip.substring(7); // Strip the IPv4-mapped IPv6 prefix
+    }
+    return ip;
+  };
 
   // Define the rate limiting rule with Redis as the store and a skip function
   const apiLimiter = rateLimit({
@@ -147,7 +155,7 @@ app.use((req, res, next) => {
     message:
       "You have exceeded the 2 AI Content Analysis reports in 24 hours limit!",
     headers: true,
-    skip: (req, res) => excludedIPs.includes(req.ip),
+    skip: (req, res) => excludedIPs.includes(normalizeIp(req.ip)),
   });
 
   // Apply the rate limiting rule to a specific endpoint
