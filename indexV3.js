@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 import { ChatOpenAI } from "@langchain/openai";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { PromptTemplate } from "@langchain/core/prompts";
-import { scrapeBlog } from "./webscraperV2.js";
+import { scrapeBlog } from "./webScraperV3.js";
 import "dotenv/config";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { createClient } from "@supabase/supabase-js";
