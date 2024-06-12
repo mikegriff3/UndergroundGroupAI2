@@ -35,7 +35,7 @@ export async function scrapeBlog(
   const domainNameWithTLD = extractDomainNameWithTLD(url);
 
   try {
-    if (visitedLinks.has(url) || visitedLinks.size >= 20) {
+    if (visitedLinks.has(url) || visitedLinks.size >= 15) {
       return {
         originalUrl,
         domainNameWithTLD,
