@@ -5,7 +5,7 @@ function submitAnalysisForm() {
   // You can also perform other actions here, such as sending the data to a server using AJAX
 
   const data = {
-    blogUrl: "https://www.fluxx.io/blog", // Replace with the URL of the blog you want to analyze
+    blogUrl: "shoreline.io/blog", // Replace with the URL of the blog you want to analyze
   };
   // Make a POST request to the API endpoint
   fetch("http://localhost:3000/api/analyze", {
@@ -17,6 +17,8 @@ function submitAnalysisForm() {
   })
     .then((response) => {
       // Check if the response is successful
+      if (response.status === 422)
+        console.log("Too many requests to same url in 24 hours");
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
