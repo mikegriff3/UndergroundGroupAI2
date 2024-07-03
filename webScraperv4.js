@@ -20,33 +20,40 @@ function checkAndAdjustUrlFormat(url, useWww) {
   return url;
 }
 
+function normalizeUrl(url) {
+  const urlObject = new URL(url);
+  urlObject.hash = ""; // Remove fragment identifiers
+  let normalizedUrl = urlObject.toString();
+  if (normalizedUrl.endsWith("/")) {
+    normalizedUrl = normalizedUrl.slice(0, -1);
+  }
+  return normalizedUrl;
+}
+
 export async function scrapeBlog(
   inputUrl,
   aggregatedText = "",
   visitedLinks = new Set(),
   useWww = null
 ) {
-  const originalUrl = inputUrl; // Store the original URL before any modifications
-  let url = ensureHttp(inputUrl);
-
-  // Add the starting link to visitedLinks
-  //visitedLinks.add(url);
+  let originalUrl = normalizeUrl(ensureHttp(inputUrl));
 
   // Extract the domain name and TLD from the original URL
-  const domainNameWithTLD = extractDomainNameWithTLD(url);
+  const domainNameWithTLD = extractDomainNameWithTLD(originalUrl);
 
   // Initialize a queue for breadth-first search
   const queue = [];
-  queue.push(url);
+  queue.push(originalUrl);
 
   try {
-    while (queue.length > 0 && visitedLinks.size < 3) {
+    while (queue.length > 0 && visitedLinks.size < 5) {
       const currentUrl = queue.shift();
+      const normalizedCurrentUrl = normalizeUrl(currentUrl);
 
-      if (visitedLinks.has(currentUrl)) {
+      if (visitedLinks.has(normalizedCurrentUrl)) {
         continue;
       }
-      visitedLinks.add(currentUrl);
+      visitedLinks.add(normalizedCurrentUrl);
 
       const response = await axios.get(currentUrl);
       const $ = cheerio.load(response.data);
@@ -56,11 +63,12 @@ export async function scrapeBlog(
         if (hrefExample) {
           const exampleUrl = new URL(hrefExample, currentUrl);
           useWww = exampleUrl.hostname.startsWith("www.");
-          url = checkAndAdjustUrlFormat(url, useWww);
+          originalUrl = checkAndAdjustUrlFormat(originalUrl, useWww);
         }
       }
 
       const baseUrl = new URL(currentUrl).origin;
+      console.log("Original URL: ", originalUrl);
 
       const links = [];
       $("a").each((index, element) => {
@@ -68,11 +76,12 @@ export async function scrapeBlog(
         if (href) {
           href = new URL(href, baseUrl).toString();
           href = checkAndAdjustUrlFormat(href, useWww);
-          // if (href !== originalUrl) {
-          //   // Skip the starting link
-          //   links.push(href);
-          // }
-          links.push(href);
+          const normalizedHref = normalizeUrl(href);
+          if (normalizedHref !== originalUrl) {
+            // Skip the starting link
+            links.push(normalizedHref);
+          }
+          //links.push(href);
         }
       });
 
@@ -93,10 +102,18 @@ export async function scrapeBlog(
       htmlContent = removeWhitespaceBetweenTags(htmlContent);
 
       console.log("VISITED LINKS: ", visitedLinks);
-      aggregatedText += htmlContent + "\n\nEND OF ARTICLE\n\n";
+      //aggregatedText += htmlContent + "\n\nEND OF ARTICLE\n\n";
+      if (normalizedCurrentUrl !== originalUrl) {
+        aggregatedText +=
+          `\n\nURL: ${currentUrl}\n\n` + htmlContent + "\n\nEND OF ARTICLE\n\n";
+      }
 
       for (const link of links) {
-        if (!visitedLinks.has(link) && link.startsWith(url)) {
+        if (
+          !visitedLinks.has(link) &&
+          link.startsWith(originalUrl) &&
+          link !== originalUrl
+        ) {
           queue.push(link);
         }
       }

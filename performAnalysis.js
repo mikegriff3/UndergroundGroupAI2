@@ -5,7 +5,7 @@ function submitAnalysisForm() {
   // You can also perform other actions here, such as sending the data to a server using AJAX
 
   const data = {
-    blogUrl: "shoreline.io/blog", // Replace with the URL of the blog you want to analyze
+    blogUrl: "moz.com/blog", // Replace with the URL of the blog you want to analyze
   };
   // Make a POST request to the API endpoint
   fetch("http://localhost:3000/api/analyze", {

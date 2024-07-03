@@ -146,7 +146,7 @@ const openAIApiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
   openAIApiKey,
   temperature: 0.7,
-  modelName: "gpt-4o",
+  //modelName: "gpt-4o",
 });
 
 function cleanText(inputText) {
