@@ -156,6 +156,10 @@ function extractDomainAndPath(url) {
     res.send("API for Underground Group AI");
   });
 
+  app.get("/health", (req, res) => {
+    res.status(200).send("OK");
+  });
+
   // Start the server
   const port = process.env.PORT || 3000;
   app.listen(port, () => {
