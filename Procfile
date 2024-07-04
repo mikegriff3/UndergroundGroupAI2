@@ -1,1 +1,1 @@
-web: node indexV5.js
+web: npm start
