@@ -21,6 +21,8 @@ app.use((req, res, next) => {
   next();
 });
 
+console.log("Redis URL: ", process.env.REDIS_URL);
+
 // Create a Redis client
 const redisClient = Redis.createClient({ url: process.env.REDIS_URL });
 
